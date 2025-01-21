@@ -1,10 +1,8 @@
-## Hi there 👋
+
+### Hi there Friend, I´m Aldo :D
 
 
-- 🔭 I’m currently working on Webdev with focus on UI/UX design.
--  SIAFI´S member (Artificial Intelligence Society)
-- 🌱 I’m currently learning pytorch fundamentals, mastering python and cloud foundamentals.
-- 👯 I’m looking to collaborate on Webapp design...
-- 📫 Phone number: 5591953181
-- 😄 Pronouns: Aldo:)
-
+[Computer Engineer] Student; Sharing about my journey about life long learning in the 
+tech World; specially in WebDev(including UI/UX design) and AI development.
+Working currently in projects at SIAFI (Artificial Intelligence Society from the the Faculty of Engineering, UNAM).
+Currently learning Data analysisi, Deep leaning, Web Development, UI/UX design.
