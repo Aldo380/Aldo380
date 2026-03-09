@@ -1,171 +1,175 @@
-# Auto Pickup for Grocery Stores — Prototype Requirements
+# Auto Pickup for Grocery Stores — Formal Software Requirements (Prototype)
 
-## 1) Objective
-Build a working prototype for an **automatic pickup system** where:
-1. Customer places grocery products on a scanning platform.
-2. System identifies products using **Computer Vision**.
-3. Cart is generated automatically.
-4. Customer takes products and walks to their car.
-5. Customer receives a mobile notification with purchase summary.
+## 1. Purpose
+Define formal requirements for a Software Engineering prototype of an **auto pickup grocery system** where a customer places products on a reading platform, products are recognized using computer vision, and the customer receives purchase information on mobile.
 
----
+## 2. Scope
+The prototype covers:
+- Product identification on a reading platform.
+- Automatic cart/session generation.
+- Session completion and customer notification.
+- Basic monitoring/reporting of user activity.
 
-## 2) Prototype Scope (MVP)
-### In scope
-- Product detection/recognition from platform camera feed.
-- Session/cart creation and real-time updates.
-- Basic checkout summary generation.
-- Mobile push notification when session is completed.
-
-### Out of scope (for prototype)
-- Full payment gateway integration.
-- Full ERP integration.
-- Multi-store production deployment.
+The prototype excludes:
+- Full financial/ERP integration.
+- Production-scale deployment.
 
 ---
 
-## 3) Functional Requirements
+## 3. Functional Requirements
 
-### FR-01 Session Start
-- The system must create a unique `session_id` when customer starts pickup (QR, kiosk, or app).
+### 3.1 Data / Information Requirements
+**FR-D01 Product Master Data**
+- The system shall maintain product catalog data including:
+  - `product_id`, `name`, `category`, `price`, `stock_level`, `vision_label`.
 
-### FR-02 Product Scanning
-- The system must process camera frames from platform and detect products.
-- Detected product events must include: `session_id`, `product_id/label`, `confidence`, `timestamp`.
+**FR-D02 Inventory Information**
+- The system shall store and expose **store stock information** (`stock_level`) for each product.
+- The system shall update stock after successful session completion.
 
-### FR-03 Cart Update
-- The backend must update cart quantities in real time as products are added/removed.
+**FR-D03 Session & Event Data**
+- The system shall store session records:
+  - `session_id`, `user_id(optional)`, `status`, `started_at`, `completed_at`.
+- The system shall store detection events:
+  - `session_id`, `product_label`, `confidence`, `timestamp`, `camera_id`.
 
-### FR-04 Product Removal Confirmation
-- The system must detect when customer retrieves products and close scanning state.
-
-### FR-05 Notification Delivery
-- On completed session, system must send push notification with:
-  - Order/session id
-  - Product list and quantities
-  - Total estimated amount
-  - Timestamp
-
-### FR-06 Manual Correction
-- Staff/customer must be able to manually correct cart in case of misdetection.
-
----
-
-## 4) Non-Functional Requirements
-
-### NFR-01 Performance
-- Inference latency target: **<= 300 ms/frame** on prototype hardware.
-- End-to-end cart update delay: **<= 1 second**.
-
-### NFR-02 Accuracy
-- Initial detection precision target: **>= 90%** for selected SKU subset.
-- False positives must be logged for model improvement.
-
-### NFR-03 Reliability
-- If CV service is unavailable, backend must keep session open and raise error status.
-
-### NFR-04 Security
-- API endpoints must require authentication for staff/admin actions.
-- Device tokens and session data must be stored securely.
-
-### NFR-05 Observability
-- Log all detection events, cart updates, and notification attempts.
+**FR-D04 Reporting Data**
+- The system shall record user activity logs for analytics and audit:
+  - session starts/completions,
+  - cart edits,
+  - detection errors/manual corrections,
+  - notification delivery status.
 
 ---
 
-## 5) System Components (Prototype)
+### 3.2 Interface Requirements
+**FR-I01 Physical Interaction Interface**
+- The system shall provide a **reading platform interface** where users place products for scanning.
+- The interface shall show scanning state (`ready`, `scanning`, `done`, `error`).
 
-1. **Vision Service**
-   - Camera input, CV model inference, optional object tracking.
-   - Emits detection events to backend.
+**FR-I02 Application Interface (UI)**
+- The UI shall display current cart items, quantities, confidence/verification status, and estimated total.
+- The UI shall allow staff or user correction when product detection is incorrect.
 
-2. **Backend API**
-   - Session lifecycle management.
-   - Cart logic and reconciliation.
-   - Notification trigger.
-
-3. **Database**
-   - Products, sessions, session_items, notification logs.
-
-4. **Mobile Notification Layer**
-   - FCM/APNs integration for push messages.
-
----
-
-## 6) Data Requirements
-
-### Product master data
-- `product_id`, `name`, `price`, `category`, `vision_label`, `expected_weight(optional)`.
-
-### Session data
-- `session_id`, `customer_id(optional)`, `status`, `started_at`, `ended_at`.
-
-### Event data
-- Detection events with model confidence and timestamps.
-
-### Notification data
-- Delivery status (`queued`, `sent`, `failed`) and provider response.
+**FR-I03 Computer Vision Interface**
+- The platform shall integrate with a CV inference service.
+- The CV module may use one or more architectures depending on task:
+  - **Object detection** (recommended baseline, e.g., YOLO family) for item identification.
+  - **Segmentation** (e.g., U-Net variants) as optional enhancement for overlap/occlusion scenarios.
+- The system shall expose a defined interface/event schema between CV and backend.
 
 ---
 
-## 7) Computer Vision Requirements
+### 3.3 Navigation Requirements
+**FR-N01 User Navigation Flow**
+- The system shall support the following user flow:
+  1. Start pickup session.
+  2. Place products on platform.
+  3. Review auto-generated cart.
+  4. Confirm/revise cart.
+  5. Complete session.
+  6. Receive mobile notification.
 
-### CVR-01 Dataset
-- Collect/store dataset for selected pilot SKUs under realistic lighting and occlusion.
-- Annotate images with bounding boxes/class labels.
-
-### CVR-02 Model
-- Use real-time detector (e.g., YOLO family) suitable for edge inference.
-
-### CVR-03 Tracking (recommended)
-- Add object tracking to reduce duplicate counts across consecutive frames.
-
-### CVR-04 Validation
-- Evaluate model with precision/recall and confusion matrix before pilot.
+**FR-N02 UI Navigation States**
+- The system shall provide clear transitions between states:
+  - `home` → `session-start` → `scanning` → `cart-review` → `session-complete`.
+- The UI shall always provide a visible “back” or “cancel session” option before completion.
 
 ---
 
-## 8) API Requirements (Minimum)
+### 3.4 Personalization Requirements
+**FR-P01 User Profile Preferences**
+- The system shall support optional user preferences:
+  - language,
+  - notification channel,
+  - accessibility settings (font/contrast).
 
+**FR-P02 Notification Personalization**
+- Notification content shall be personalized with user/session context:
+  - user name (if available),
+  - purchase summary,
+  - session timestamp,
+  - store identifier.
+
+---
+
+### 3.5 Transactions / Internal Functionalities
+**FR-T01 Session Transaction Management**
+- The system shall treat each pickup interaction as a transaction-like session with status:
+  - `created`, `scanning`, `review`, `completed`, `cancelled`, `error`.
+
+**FR-T02 Cart Reconciliation**
+- The system shall reconcile CV detections with cart state and allow manual overrides.
+
+**FR-T03 Activity Report Generation**
+- The system shall generate activity reports, including:
+  - sessions per day,
+  - products scanned,
+  - correction rate,
+  - notification success rate.
+
+**FR-T04 Notification Triggering**
+- On successful session completion, the system shall trigger customer notification with purchase summary.
+
+---
+
+## 4. Non-Functional Requirements
+
+### 4.1 Performance
+**NFR-01** Inference latency should be <= 300 ms/frame on prototype hardware.
+
+**NFR-02** Cart UI update delay should be <= 1 second after detection event.
+
+### 4.2 Accuracy & Quality
+**NFR-03** Initial detection precision for pilot SKUs should be >= 90%.
+
+**NFR-04** The system shall log false positives/false negatives for model improvement.
+
+### 4.3 Reliability & Availability
+**NFR-05** If CV service fails, the session shall remain recoverable and enter `error` state with user feedback.
+
+**NFR-06** Notification retries shall be attempted on temporary delivery failures.
+
+### 4.4 Security & Privacy
+**NFR-07** Staff/admin endpoints shall require authentication and authorization.
+
+**NFR-08** Sensitive user/session data shall be protected in transit and at rest.
+
+### 4.5 Usability
+**NFR-09** The interface shall be understandable for first-time users with minimal training.
+
+**NFR-10** User errors (misplacement, wrong item) shall be recoverable through guided UI actions.
+
+### 4.6 Maintainability & Observability
+**NFR-11** The system shall maintain structured logs for CV events, cart updates, and notifications.
+
+**NFR-12** Requirements traceability shall be preserved by requirement IDs (FR-*, NFR-*).
+
+---
+
+## 5. Minimum External/API Contracts (Prototype)
 - `POST /sessions/start`
 - `POST /sessions/{id}/events/detection`
-- `PATCH /sessions/{id}/items`
+- `PATCH /sessions/{id}/cart`
 - `POST /sessions/{id}/complete`
-- `POST /notifications/send`
+- `POST /sessions/{id}/cancel`
 - `GET /sessions/{id}/summary`
+- `GET /reports/activity`
 
 ---
 
-## 9) Acceptance Criteria (Prototype Done)
-- A demo session can be started and completed end-to-end.
-- At least 10–20 target grocery products can be recognized.
-- Cart summary is generated from CV events.
-- Customer test device receives push notification after session completion.
-- Logs are available for detections, corrections, and notification status.
+## 6. Acceptance Criteria
+1. A user can complete full flow from session start to notification delivery.
+2. Store stock information is captured and updated after completed session.
+3. System supports cart review, correction, and final confirmation.
+4. Activity report can be generated for completed sessions.
+5. Performance/accuracy targets for prototype are measurable through logs.
 
 ---
 
-## 10) Suggested Repository Structure for this Project
-
-```text
-projects/
-  auto-pickup-grocery/
-    README.md
-    requirements/
-      prototype-requirements.md
-    vision-service/
-    backend-api/
-    mobile-app/
-    infrastructure/
-    docs/
-```
-
----
-
-## 11) Next Implementation Steps
-1. Define pilot SKU list (10–20 items).
-2. Record and annotate initial dataset.
-3. Train/evaluate baseline detector.
-4. Build minimal backend session/cart endpoints.
-5. Integrate push notification provider.
-6. Run end-to-end in-store simulation.
+## 7. Suggested Next Engineering Steps
+1. Build requirements traceability matrix (FR/NFR ↔ components/tests).
+2. Define UI wireframes for required navigation states.
+3. Select baseline CV model (detector first; segmentation optional).
+4. Implement event contracts between vision service and backend.
+5. Define test plan (functional tests + non-functional benchmarks).
